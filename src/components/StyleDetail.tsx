@@ -205,6 +205,112 @@ export default function StyleDetail({
 
           <ParamControls schema={preview.paramSchema} values={params} onChange={onParam} disabled={busy} />
 
+          {/* Right-Side Text & README Header Banner Card Section */}
+          <div className="rounded-lg border border-[#30363d] bg-[#090d13] p-3.5">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-xs font-semibold text-[#e6edf3]">
+                  🎨 README Header Banner with Text
+                </h3>
+                <p className="text-[11px] text-[#7d8590]">
+                  Add a developer identity card with custom text on the right side of the art.
+                </p>
+              </div>
+              <label className="relative inline-flex cursor-pointer items-center">
+                <input
+                  type="checkbox"
+                  checked={Boolean(params.bannerEnabled)}
+                  onChange={(e) => {
+                    const enabled = e.target.checked;
+                    setParams((prev) => ({
+                      ...prev,
+                      bannerEnabled: enabled,
+                      bannerTitle: prev.bannerTitle ?? profile.displayName ?? profile.username,
+                      bannerSubtitle: prev.bannerSubtitle ?? "Full-Stack Developer",
+                      bannerBio: prev.bannerBio ?? profile.bio ?? "Building things for the web & AI",
+                      bannerTags: prev.bannerTags ?? "TypeScript, React, Next.js, Node.js",
+                      bannerTheme: prev.bannerTheme ?? "terminal",
+                    }));
+                  }}
+                  className="peer sr-only"
+                />
+                <div className="peer h-5 w-9 rounded-full bg-[#21262d] after:absolute after:top-[2px] after:left-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:bg-[#238636] peer-checked:after:translate-x-full peer-focus:outline-none" />
+              </label>
+            </div>
+
+            {Boolean(params.bannerEnabled) && (
+              <div className="mt-3.5 space-y-3 border-t border-[#21262d] pt-3 text-xs">
+                <div>
+                  <label className="mb-1 block text-[11px] font-medium text-[#7d8590]">
+                    Banner Theme
+                  </label>
+                  <select
+                    value={String(params.bannerTheme ?? "terminal")}
+                    onChange={(e) => onParam("bannerTheme", e.target.value)}
+                    className="w-full rounded-md border border-[#30363d] bg-[#0d1117] px-2.5 py-1.5 text-xs text-[#e6edf3] outline-none focus:border-[#388bfd]"
+                  >
+                    <option value="terminal">Terminal Obsidian (Default)</option>
+                    <option value="blueprint">Blueprint Navy</option>
+                    <option value="cyber">Cyber Neon</option>
+                    <option value="minimal">Minimal Dark</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-[11px] font-medium text-[#7d8590]">
+                    Title / Developer Name
+                  </label>
+                  <input
+                    type="text"
+                    value={String(params.bannerTitle ?? profile.displayName ?? profile.username)}
+                    placeholder="e.g. Ashutosh Sriwastav"
+                    onChange={(e) => onParam("bannerTitle", e.target.value)}
+                    className="w-full rounded-md border border-[#30363d] bg-[#0d1117] px-2.5 py-1.5 text-xs text-[#e6edf3] outline-none focus:border-[#388bfd]"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-[11px] font-medium text-[#7d8590]">
+                    Role / Subtitle
+                  </label>
+                  <input
+                    type="text"
+                    value={String(params.bannerSubtitle ?? "Full-Stack Developer")}
+                    placeholder="e.g. Software Engineer · Open Source"
+                    onChange={(e) => onParam("bannerSubtitle", e.target.value)}
+                    className="w-full rounded-md border border-[#30363d] bg-[#0d1117] px-2.5 py-1.5 text-xs text-[#e6edf3] outline-none focus:border-[#388bfd]"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-[11px] font-medium text-[#7d8590]">
+                    Bio / Custom Description
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={String(params.bannerBio ?? profile.bio ?? "")}
+                    placeholder="e.g. Building tools and interactive web experiences"
+                    onChange={(e) => onParam("bannerBio", e.target.value)}
+                    className="w-full rounded-md border border-[#30363d] bg-[#0d1117] px-2.5 py-1.5 text-xs text-[#e6edf3] outline-none focus:border-[#388bfd]"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-[11px] font-medium text-[#7d8590]">
+                    Tech Stack Badges (comma-separated)
+                  </label>
+                  <input
+                    type="text"
+                    value={String(params.bannerTags ?? "TypeScript, React, Next.js, Node.js")}
+                    placeholder="e.g. TypeScript, React, Next.js, Python"
+                    onChange={(e) => onParam("bannerTags", e.target.value)}
+                    className="w-full rounded-md border border-[#30363d] bg-[#0d1117] px-2.5 py-1.5 text-xs text-[#e6edf3] outline-none focus:border-[#388bfd]"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
           {result && (
             <div className="rounded-lg border border-[#30363d] bg-[#010409] p-3">
               <div className="mb-2 flex flex-wrap items-center gap-2">

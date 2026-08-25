@@ -50,6 +50,15 @@ export function coerceParams(
       }
     }
   }
+
+  // Preserve universal banner parameters
+  if (typeof src.bannerEnabled === "boolean") out.bannerEnabled = src.bannerEnabled;
+  if (typeof src.bannerTheme === "string") out.bannerTheme = src.bannerTheme;
+  if (typeof src.bannerTitle === "string") out.bannerTitle = src.bannerTitle;
+  if (typeof src.bannerSubtitle === "string") out.bannerSubtitle = src.bannerSubtitle;
+  if (typeof src.bannerBio === "string") out.bannerBio = src.bannerBio;
+  if (typeof src.bannerTags === "string") out.bannerTags = src.bannerTags;
+
   return out;
 }
 

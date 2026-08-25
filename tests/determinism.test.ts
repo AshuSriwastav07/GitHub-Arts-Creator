@@ -106,4 +106,13 @@ describe("artifact identity hashing", () => {
     const hash = artifactIdentityHash(base);
     expect(hash).toMatch(/^[0-9a-f]{40}$/);
   });
+
+  it("banner parameters participate in identity hashing and generate valid banner SVG", () => {
+    const bannerHash = artifactIdentityHash({
+      ...base,
+      params: { ...base.params, bannerEnabled: true, bannerTitle: "The Octocat", bannerTheme: "terminal" },
+    });
+    expect(bannerHash).toMatch(/^[0-9a-f]{40}$/);
+    expect(bannerHash).not.toBe(artifactIdentityHash(base));
+  });
 });

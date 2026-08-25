@@ -1,5 +1,6 @@
 import sharp from "sharp";
 import { analyzeImage } from "./analysis";
+import { composeBannerSvg } from "./banner";
 import { AppError, toAppError } from "./errors";
 import {
   defaultSeedFor,
@@ -86,7 +87,7 @@ export async function renderArtifact(req: RenderRequest): Promise<RenderedArtifa
     const existing = await store.get(hash);
     if (existing) return toResult(existing, true, style, profile);
 
-    const artwork = await produce(style, analysis, params, seed, format);
+    const artwork = await produce(style, analysis, params, seed, format, profile);
     const ext: "svg" | "png" | "txt" =
       artwork.format === "text" ? "txt" : artwork.format;
     await store.put({
@@ -152,7 +153,8 @@ async function produce(
   analysis: Awaited<ReturnType<typeof analyzeImage>>,
   params: Record<string, unknown>,
   seed: number,
-  format: "svg" | "png" | "text"
+  format: "svg" | "png" | "text",
+  profile: GitHubProfile
 ): Promise<{ format: "svg" | "png" | "text"; data: string | Buffer; width: number; height: number }> {
   if (format === "text") {
     if (!style.generateText) throw new AppError("BAD_REQUEST", 400, `style ${style.id} has no text output`);
@@ -160,6 +162,25 @@ async function produce(
     return { format: "text", data: t.rows.join("\n"), width: t.width, height: t.rows.length };
   }
   const base = style.generate(analysis, params, seed);
+
+  // If banner card layout with right-side text is enabled
+  if (params.bannerEnabled === true && typeof base.data === "string") {
+    const banner = composeBannerSvg(base.data, {
+      username: profile.username,
+      title: typeof params.bannerTitle === "string" ? params.bannerTitle : profile.displayName || profile.username,
+      subtitle: typeof params.bannerSubtitle === "string" ? params.bannerSubtitle : undefined,
+      bio: typeof params.bannerBio === "string" ? params.bannerBio : profile.bio || undefined,
+      tags: typeof params.bannerTags === "string" ? params.bannerTags : undefined,
+      theme: typeof params.bannerTheme === "string" ? (params.bannerTheme as "terminal" | "blueprint" | "cyber" | "minimal") : undefined,
+      background: typeof params.background === "string" ? params.background : undefined,
+    });
+    if (format === "png") {
+      const buf = await sharp(Buffer.from(banner.data)).png().toBuffer();
+      return { format: "png", data: buf, width: banner.width, height: banner.height };
+    }
+    return { format: "svg", data: banner.data, width: banner.width, height: banner.height };
+  }
+
   if (format === "png") {
     const buf = await sharp(Buffer.from(base.data as string)).png().toBuffer();
     return { format: "png", data: buf, width: base.width, height: base.height };
