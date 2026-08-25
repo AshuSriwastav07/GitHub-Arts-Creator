@@ -89,14 +89,14 @@ export async function POST(req: Request) {
   }
 }
 
-/** Cheap low-res settings per style so all previews stay well under ~3s combined. */
+/** Clean, sharp preview settings per style so all previews render fast and crisp. */
 const PREVIEW_OVERRIDES: Record<string, Record<string, unknown>> = {
-  halftone: { resolution: 40 },
-  lowpoly: { pointDensity: 200 },
-  lineart: { detail: 4 },
-  charmosa: { cols: 72 },
-  hexmosaic: { cols: 32 },
-  pixelart: { cols: 48 },
+  halftone: { resolution: 48 },
+  lowpoly: { pointDensity: 360 },
+  lineart: { detail: 5 },
+  charmosa: { cols: 76 },
+  hexmosaic: { cols: 44, gap: 4 },
+  pixelart: { cols: 56, paletteSize: 0 },
   heatmap: {},
 };
 

@@ -71,8 +71,11 @@ export async function POST(req: Request) {
 }
 
 function publicOrigin(req: Request): string {
-  const configured = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/+$/, "");
+  const configured = (process.env.NEXT_PUBLIC_APP_URL || process.env.BASE_URL)?.trim().replace(/\/+$/, "");
   if (configured) return configured;
+  const host = req.headers.get("x-forwarded-host") || req.headers.get("host");
+  const proto = req.headers.get("x-forwarded-proto") || "https";
+  if (host) return `${proto}://${host}`;
   try {
     return new URL(req.url).origin;
   } catch {
