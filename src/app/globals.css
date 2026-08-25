@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background-color: #0a0c10;
+}
+
+body {
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+}
+
+::selection {
+  background: #1f6feb66;
+}
+
+/* Terminal caret */
+.caret::after {
+  content: "▌";
+  margin-left: 2px;
+  color: #39d353;
+  animation: blink 1.1s steps(1) infinite;
+}
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* Subtle blueprint grid backdrop */
+.bg-grid {
+  background-image:
+    linear-gradient(rgba(48, 54, 61, 0.25) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(48, 54, 61, 0.25) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+input[type="color"] {
+  -webkit-appearance: none;
+  appearance: none;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+input[type="color"]::-webkit-color-swatch {
+  border: 1px solid #30363d;
+  border-radius: 6px;
+}
