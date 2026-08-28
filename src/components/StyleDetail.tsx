@@ -205,6 +205,45 @@ export default function StyleDetail({
 
           <ParamControls schema={preview.paramSchema} values={params} onChange={onParam} disabled={busy} />
 
+          {/* Growth & Trust Controls: Attribution Badge & Adaptive Theme */}
+          <div className="space-y-2.5 rounded-lg border border-[#30363d] bg-[#090d13] p-3.5 text-xs">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="font-semibold text-[#e6edf3]">🏷️ Attribution Badge</span>
+                <p className="text-[11px] text-[#7d8590]">
+                  Adds a subtle <code className="rounded bg-[#161b22] px-1 py-0.5 text-[10px]">gh-avatar-art</code> credit mark in the corner.
+                </p>
+              </div>
+              <label className="relative inline-flex cursor-pointer items-center">
+                <input
+                  type="checkbox"
+                  checked={params.showBadge !== false}
+                  onChange={(e) => onParam("showBadge", e.target.checked)}
+                  className="peer sr-only"
+                />
+                <div className="peer h-4 w-8 rounded-full bg-[#21262d] after:absolute after:top-[2px] after:left-[2px] after:h-3 after:w-3 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:bg-[#238636] peer-checked:after:translate-x-full peer-focus:outline-none" />
+              </label>
+            </div>
+
+            <div className="flex items-center justify-between border-t border-[#21262d] pt-2.5">
+              <div>
+                <span className="font-semibold text-[#e6edf3]">🌓 Theme-Adaptive SVG</span>
+                <p className="text-[11px] text-[#7d8590]">
+                  Auto-switches styling between GitHub light and dark modes via CSS.
+                </p>
+              </div>
+              <label className="relative inline-flex cursor-pointer items-center">
+                <input
+                  type="checkbox"
+                  checked={params.adaptiveTheme !== false}
+                  onChange={(e) => onParam("adaptiveTheme", e.target.checked)}
+                  className="peer sr-only"
+                />
+                <div className="peer h-4 w-8 rounded-full bg-[#21262d] after:absolute after:top-[2px] after:left-[2px] after:h-3 after:w-3 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:bg-[#238636] peer-checked:after:translate-x-full peer-focus:outline-none" />
+              </label>
+            </div>
+          </div>
+
           {/* Right-Side Text & README Header Banner Card Section */}
           <div className="rounded-lg border border-[#30363d] bg-[#090d13] p-3.5">
             <div className="flex items-center justify-between">
@@ -312,28 +351,68 @@ export default function StyleDetail({
           </div>
 
           {result && (
-            <div className="rounded-lg border border-[#30363d] bg-[#010409] p-3">
-              <div className="mb-2 flex flex-wrap items-center gap-2">
-                <span className="text-xs text-[#7d8590]">README embed:</span>
-                <div className="flex overflow-hidden rounded-md border border-[#30363d]">
-                  {embedOptions.map((tab) => (
-                    <button
-                      key={tab}
-                      type="button"
-                      onClick={() => setEmbedTab(tab)}
-                      className={`px-2 py-1 text-[11px] ${
-                        embedTab === tab ? "bg-[#238636] text-white" : "bg-[#161b22] hover:bg-[#21262d]"
-                      }`}
-                    >
-                      {tab === "centered" ? "<p><img/>" : tab === "plain" ? "![]()" : "``` block"}
-                    </button>
-                  ))}
+            <div className="space-y-3">
+              {/* Embed code box */}
+              <div className="rounded-lg border border-[#30363d] bg-[#010409] p-3">
+                <div className="mb-2 flex flex-wrap items-center gap-2">
+                  <span className="text-xs text-[#7d8590]">README embed:</span>
+                  <div className="flex overflow-hidden rounded-md border border-[#30363d]">
+                    {embedOptions.map((tab) => (
+                      <button
+                        key={tab}
+                        type="button"
+                        onClick={() => setEmbedTab(tab)}
+                        className={`px-2 py-1 text-[11px] ${
+                          embedTab === tab ? "bg-[#238636] text-white" : "bg-[#161b22] hover:bg-[#21262d]"
+                        }`}
+                      >
+                        {tab === "centered" ? "<p><img/>" : tab === "plain" ? "![]()" : "``` block"}
+                      </button>
+                    ))}
+                  </div>
+                  <CopyButton text={embedText} className="ml-auto" />
                 </div>
-                <CopyButton text={embedText} className="ml-auto" />
+                <pre className="max-h-40 overflow-auto rounded bg-[#0d1117] p-2 text-[11px] leading-relaxed text-[#c9d1d9] whitespace-pre-wrap break-all">
+                  {embedText}
+                </pre>
               </div>
-              <pre className="max-h-40 overflow-auto rounded bg-[#0d1117] p-2 text-[11px] leading-relaxed text-[#c9d1d9] whitespace-pre-wrap break-all">
-                {embedText}
-              </pre>
+
+              {/* Public Gallery Opt-In (spec §3) */}
+              <div className="flex items-center justify-between rounded-lg border border-[#30363d] bg-[#0d1117] px-3.5 py-2.5 text-xs">
+                <div>
+                  <span className="font-semibold text-[#e6edf3]">🌟 Add to Public Gallery</span>
+                  <p className="text-[11px] text-[#7d8590]">
+                    Showcase this artwork on the community gallery page.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const next = !Boolean(params.isPublic);
+                    onParam("isPublic", next);
+                    if (result?.hash) {
+                      await fetch("/api/gallery", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          action: "opt-in",
+                          hash: result.hash,
+                          username: profile.username,
+                          styleId: preview.id,
+                          isPublic: next,
+                        }),
+                      }).catch(() => null);
+                    }
+                  }}
+                  className={`rounded px-2.5 py-1 text-xs font-medium transition-colors ${
+                    Boolean(params.isPublic)
+                      ? "border border-[#238636] bg-[#238636]/20 text-[#39d353]"
+                      : "border border-[#30363d] bg-[#161b22] text-[#c9d1d9] hover:border-[#8b949e]"
+                  }`}
+                >
+                  {Boolean(params.isPublic) ? "✓ Opted in" : "+ Opt in"}
+                </button>
+              </div>
             </div>
           )}
         </div>

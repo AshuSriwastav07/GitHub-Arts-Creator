@@ -1,6 +1,9 @@
 import sharp from "sharp";
+import { injectAdaptiveTheme } from "./adaptive";
 import { analyzeImage } from "./analysis";
+import { injectAttributionBadge } from "./badge";
 import { composeBannerSvg } from "./banner";
+import { dataLayer } from "./data-layer";
 import { AppError, toAppError } from "./errors";
 import {
   defaultSeedFor,
@@ -104,6 +107,10 @@ export async function renderArtifact(req: RenderRequest): Promise<RenderedArtifa
         createdAt: new Date().toISOString(),
       },
     });
+
+    // Record generation event asynchronously for site-wide stats (spec §1)
+    void dataLayer.recordGeneration(profile.username, style.id, hash);
+
     const stored = await store.get(hash);
     if (!stored) throw new AppError("RENDER_FAILED", 500, "store write failed");
     return toResult(stored, false, style, profile);
@@ -165,7 +172,7 @@ async function produce(
 
   // If banner card layout with right-side text is enabled
   if (params.bannerEnabled === true && typeof base.data === "string") {
-    const banner = composeBannerSvg(base.data, {
+    let bannerSvg = composeBannerSvg(base.data, {
       username: profile.username,
       title: typeof params.bannerTitle === "string" ? params.bannerTitle : profile.displayName || profile.username,
       subtitle: typeof params.bannerSubtitle === "string" ? params.bannerSubtitle : undefined,
@@ -173,12 +180,50 @@ async function produce(
       tags: typeof params.bannerTags === "string" ? params.bannerTags : undefined,
       theme: typeof params.bannerTheme === "string" ? (params.bannerTheme as "terminal" | "blueprint" | "cyber" | "minimal") : undefined,
       background: typeof params.background === "string" ? params.background : undefined,
-    });
-    if (format === "png") {
-      const buf = await sharp(Buffer.from(banner.data)).png().toBuffer();
-      return { format: "png", data: buf, width: banner.width, height: banner.height };
+    }).data;
+
+    if (params.adaptiveTheme !== false) {
+      bannerSvg = injectAdaptiveTheme(bannerSvg, {
+        styleId: style.id,
+        background: typeof params.background === "string" ? params.background : undefined,
+        isMonochrome: params.colorMode === "mono",
+      });
     }
-    return { format: "svg", data: banner.data, width: banner.width, height: banner.height };
+
+    if (format === "png") {
+      const buf = await sharp(Buffer.from(bannerSvg)).png().toBuffer();
+      return { format: "png", data: buf, width: 1600, height: 600 };
+    }
+    return { format: "svg", data: bannerSvg, width: 1600, height: 600 };
+  }
+
+  // Standalone artwork SVG post-processing
+  if (typeof base.data === "string") {
+    let svgDoc = base.data;
+
+    // Feature 4: Theme-adaptive SVG output
+    if (params.adaptiveTheme !== false) {
+      svgDoc = injectAdaptiveTheme(svgDoc, {
+        styleId: style.id,
+        background: typeof params.background === "string" ? params.background : undefined,
+        isMonochrome: params.colorMode === "mono",
+      });
+    }
+
+    // Feature 2: Optional attribution badge
+    if (params.showBadge !== false) {
+      svgDoc = injectAttributionBadge(svgDoc, {
+        width: base.width,
+        height: base.height,
+      });
+    }
+
+    if (format === "png") {
+      const buf = await sharp(Buffer.from(svgDoc)).png().toBuffer();
+      return { format: "png", data: buf, width: base.width, height: base.height };
+    }
+
+    return { format: "svg", data: svgDoc, width: base.width, height: base.height };
   }
 
   if (format === "png") {

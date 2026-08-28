@@ -115,4 +115,20 @@ describe("artifact identity hashing", () => {
     expect(bannerHash).toMatch(/^[0-9a-f]{40}$/);
     expect(bannerHash).not.toBe(artifactIdentityHash(base));
   });
+
+  it("showBadge and adaptiveTheme participate in identity hashing", () => {
+    const defaultHash = artifactIdentityHash(base);
+    const noBadgeHash = artifactIdentityHash({
+      ...base,
+      params: { ...base.params, showBadge: false },
+    });
+    const noAdaptiveHash = artifactIdentityHash({
+      ...base,
+      params: { ...base.params, adaptiveTheme: false },
+    });
+    expect(noBadgeHash).not.toBe(defaultHash);
+    expect(noAdaptiveHash).not.toBe(defaultHash);
+    expect(noBadgeHash).toMatch(/^[0-9a-f]{40}$/);
+    expect(noAdaptiveHash).toMatch(/^[0-9a-f]{40}$/);
+  });
 });

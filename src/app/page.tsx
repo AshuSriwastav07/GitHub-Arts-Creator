@@ -1,7 +1,9 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import StyleDetail from "@/components/StyleDetail";
+import type { DiscoveredUsage } from "@/lib/data-layer";
 import type { ApiErrorBody, GenerateResponse, PreviewItem } from "@/lib/types";
 
 const EXAMPLES = ["torvalds", "gaearon", "sindresorhus", "yyx990803"];
@@ -12,7 +14,31 @@ export default function HomePage() {
   const [data, setData] = useState<GenerateResponse | null>(null);
   const [error, setError] = useState<{ code: string; message: string } | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [stats, setStats] = useState<{ totalGenerations: number; uniqueUsernames: number } | null>(null);
+  const [usages, setUsages] = useState<DiscoveredUsage[]>([]);
   const resultsRef = useRef<HTMLDivElement | null>(null);
+
+  // Load stats and discovered usages
+  useEffect(() => {
+    fetch("/api/stats")
+      .then((res) => res.json())
+      .then((s) => setStats(s))
+      .catch(() => null);
+
+    fetch("/api/used-in-the-wild")
+      .then((res) => res.json())
+      .then((d) => setUsages(d.usages || []))
+      .catch(() => null);
+
+    // Check if ?u= is in URL
+    if (typeof window !== "undefined") {
+      const u = new URLSearchParams(window.location.search).get("u");
+      if (u) {
+        setInput(u);
+        void generate(u);
+      }
+    }
+  }, []);
 
   async function generate(raw?: string) {
     const value = (raw ?? input).trim();
@@ -55,19 +81,54 @@ export default function HomePage() {
   return (
     <main className="bg-grid min-h-screen">
       <div className="mx-auto max-w-5xl px-4 pb-20 pt-10 sm:pt-16">
+        {/* Navigation Bar */}
+        <nav className="mb-8 flex items-center justify-between border-b border-[#30363d] pb-4">
+          <div className="flex items-center gap-2">
+            <span className="text-[#39d353]">$</span>
+            <span className="font-semibold text-[#e6edf3]">gh-avatar-art</span>
+          </div>
+          <div className="flex items-center gap-3 text-xs">
+            <Link
+              href="/gallery"
+              className="rounded-md border border-[#30363d] bg-[#161b22] px-3 py-1.5 font-medium text-[#c9d1d9] transition-colors hover:border-[#8b949e] hover:text-white"
+            >
+              🌟 Community Gallery
+            </Link>
+            <a
+              href="https://github.com/AshuSriwastav07/GitHub-Arts-Creator"
+              target="_blank"
+              rel="noreferrer noopener"
+              className="rounded-md border border-[#30363d] bg-[#161b22] px-3 py-1.5 font-medium text-[#7d8590] hover:text-[#e6edf3]"
+            >
+              GitHub ↗
+            </a>
+          </div>
+        </nav>
+
         {/* Header */}
-        <header className="mb-10">
+        <header className="mb-8">
           <p className="text-xs text-[#7d8590]">
             <span className="text-[#39d353]">~/</span>github-avatar-art — deterministic README art
           </p>
           <h1 className="caret mt-2 text-2xl font-bold tracking-tight text-[#e6edf3] sm:text-3xl">
-            $ gh-avatar-art
+            Turn your GitHub Avatar into Code Art
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[#8b949e]">
-            Paste a GitHub profile URL. We fetch the public avatar, run it through an original
-            algorithmic pipeline, and hand you permanent image URLs + copy-paste Markdown for your
-            README. No login. Deterministic: same inputs → identical output.
+            Paste a GitHub profile URL. We fetch your public avatar, run it through our algorithmic
+            pipeline, and hand you permanent image URLs + copy-paste Markdown for your README.
+            No login required.
           </p>
+
+          {/* Site-Wide Usage Counter (spec §1) */}
+          {stats && stats.totalGenerations > 0 && (
+            <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-[#30363d] bg-[#0d1117] px-3.5 py-1 text-xs text-[#8b949e]">
+              <span className="h-2 w-2 rounded-full bg-[#39d353] animate-pulse" />
+              <span>
+                <strong className="font-semibold text-[#e6edf3]">{stats.totalGenerations.toLocaleString()}</strong> artworks generated for{" "}
+                <strong className="font-semibold text-[#e6edf3]">{stats.uniqueUsernames.toLocaleString()}</strong> developers
+              </span>
+            </div>
+          )}
         </header>
 
         {/* Input */}
@@ -123,7 +184,7 @@ export default function HomePage() {
           ))}
         </div>
 
-        {/* Error states — one specific message per failure mode (spec §4) */}
+        {/* Error states */}
         {error && (
           <div role="alert" className="mt-6 rounded-lg border border-[#f85149]/40 bg-[#f85149]/10 p-4">
             <p className="font-mono text-xs uppercase tracking-wide text-[#ffa198]">error: {error.code}</p>
@@ -188,7 +249,6 @@ export default function HomePage() {
                     {p.svg ? (
                       <div
                         className="h-full w-full [&>svg]:block [&>svg]:h-full [&>svg]:w-full"
-                        // SVGs are generated server-side by our own pipeline.
                         dangerouslySetInnerHTML={{ __html: p.svg }}
                         role="img"
                         aria-label={`${p.name} preview of ${data.profile.username}'s avatar`}
@@ -213,6 +273,59 @@ export default function HomePage() {
           </div>
         )}
 
+        {/* Used In The Wild (spec §5) */}
+        {usages.length > 0 && (
+          <section className="mt-20 border-t border-[#21262d] pt-10">
+            <div className="mb-6 flex items-center justify-between">
+              <div>
+                <h2 className="text-base font-semibold text-[#e6edf3]">Used in the Wild</h2>
+                <p className="text-xs text-[#7d8590]">
+                  Real developer repositories embedding GitHub Avatar Art in their READMEs.
+                </p>
+              </div>
+              <span className="rounded-full bg-[#161b22] px-2.5 py-1 text-[11px] font-mono text-[#7d8590]">
+                {usages.length} repos discovered
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {usages.slice(0, 6).map((repo) => (
+                <a
+                  key={repo.repoFullName}
+                  href={repo.repoUrl}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="flex items-start gap-3 rounded-xl border border-[#30363d] bg-[#0d1117] p-3.5 transition-all hover:border-[#8b949e] hover:bg-[#161b22]/50"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={repo.ownerAvatarUrl}
+                    alt={repo.repoFullName}
+                    width={36}
+                    height={36}
+                    className="h-9 w-9 rounded-full border border-[#30363d]"
+                  />
+                  <div className="min-w-0 grow">
+                    <p className="truncate text-xs font-semibold text-[#58a6ff] hover:underline">
+                      {repo.repoFullName}
+                    </p>
+                    {repo.description && (
+                      <p className="mt-1 line-clamp-1 text-[11px] text-[#7d8590]">
+                        {repo.description}
+                      </p>
+                    )}
+                    {repo.stars !== undefined && repo.stars > 0 && (
+                      <p className="mt-1 text-[10px] font-mono text-[#e6edf3]">
+                        ★ {repo.stars} stars
+                      </p>
+                    )}
+                  </div>
+                </a>
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* Footer */}
         <footer className="mt-20 border-t border-[#21262d] pt-6 text-[11px] leading-relaxed text-[#484f58]">
           <p>
@@ -220,8 +333,11 @@ export default function HomePage() {
             rate-limited per IP
           </p>
           <p className="mt-1">
-            v1 scope note: dot-matrix/stipple ship as halftone params, blueprint/circuit as line-art presets,
-            binary/hex/blocks/username/markdown as character-set options — see README for the full cut list.
+            Browse community generations on the{" "}
+            <Link href="/gallery" className="text-[#58a6ff] hover:underline">
+              Public Gallery
+            </Link>
+            .
           </p>
         </footer>
       </div>

@@ -51,6 +51,10 @@ export function coerceParams(
     }
   }
 
+  // Preserve universal growth & trust parameters (default to true)
+  out.showBadge = typeof src.showBadge === "boolean" ? src.showBadge : true;
+  out.adaptiveTheme = typeof src.adaptiveTheme === "boolean" ? src.adaptiveTheme : true;
+
   // Preserve universal banner parameters
   if (typeof src.bannerEnabled === "boolean") out.bannerEnabled = src.bannerEnabled;
   if (typeof src.bannerTheme === "string") out.bannerTheme = src.bannerTheme;
