@@ -136,7 +136,7 @@ class DataLayer {
   }
 
   /** Record a fresh generation event asynchronously without blocking response */
-  async recordGeneration(username: string, styleId: string, hash: string): Promise<void> {
+  async recordGeneration(username: string, styleId: string, hash: string, isPublic = true): Promise<void> {
     await this.ensureLoaded();
     const cleanUser = username.toLowerCase().trim();
 
@@ -145,18 +145,26 @@ class DataLayer {
     this.state.stats.uniqueUsernames = Object.keys(this.state.usernames).length;
     this.state.stats.lastUpdated = new Date().toISOString();
 
-    // Keep the most recent 500 generation events
-    const event: GenerationEvent = {
-      id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      username,
-      styleId,
-      hash,
-      isPublic: false,
-      createdAt: new Date().toISOString(),
-    };
-    this.state.events.unshift(event);
-    if (this.state.events.length > 500) {
-      this.state.events = this.state.events.slice(0, 500);
+    // Check if event with this hash already exists
+    const existingIndex = this.state.events.findIndex((e) => e.hash === hash);
+    if (existingIndex !== -1) {
+      this.state.events[existingIndex].createdAt = new Date().toISOString();
+      if (isPublic) {
+        this.state.events[existingIndex].isPublic = true;
+      }
+    } else {
+      const event: GenerationEvent = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        username,
+        styleId,
+        hash,
+        isPublic: true, // Automatically added to community showcase
+        createdAt: new Date().toISOString(),
+      };
+      this.state.events.unshift(event);
+      if (this.state.events.length > 500) {
+        this.state.events = this.state.events.slice(0, 500);
+      }
     }
 
     void this.scheduleSave();

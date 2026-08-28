@@ -377,18 +377,22 @@ export default function StyleDetail({
                 </pre>
               </div>
 
-              {/* Public Gallery Opt-In (spec §3) */}
+              {/* Community Showcase Status (Auto-added, removable) */}
               <div className="flex items-center justify-between rounded-lg border border-[#30363d] bg-[#0d1117] px-3.5 py-2.5 text-xs">
                 <div>
-                  <span className="font-semibold text-[#e6edf3]">🌟 Add to Public Gallery</span>
+                  <span className="flex items-center gap-1.5 font-semibold text-[#e6edf3]">
+                    <span className="text-[#39d353]">✓</span> In Community Gallery
+                  </span>
                   <p className="text-[11px] text-[#7d8590]">
-                    Showcase this artwork on the community gallery page.
+                    {params.isPublic !== false
+                      ? "Automatically featured in the community showcase."
+                      : "Removed from public community gallery."}
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={async () => {
-                    const next = !Boolean(params.isPublic);
+                    const next = params.isPublic === false ? true : false;
                     onParam("isPublic", next);
                     if (result?.hash) {
                       await fetch("/api/gallery", {
@@ -405,12 +409,12 @@ export default function StyleDetail({
                     }
                   }}
                   className={`rounded px-2.5 py-1 text-xs font-medium transition-colors ${
-                    Boolean(params.isPublic)
-                      ? "border border-[#238636] bg-[#238636]/20 text-[#39d353]"
-                      : "border border-[#30363d] bg-[#161b22] text-[#c9d1d9] hover:border-[#8b949e]"
+                    params.isPublic !== false
+                      ? "border border-[#f85149]/40 bg-[#f85149]/10 text-[#ffa198] hover:bg-[#f85149]/20"
+                      : "border border-[#238636] bg-[#238636]/20 text-[#39d353] hover:bg-[#238636]/30"
                   }`}
                 >
-                  {Boolean(params.isPublic) ? "✓ Opted in" : "+ Opt in"}
+                  {params.isPublic !== false ? "Remove from Gallery" : "+ Add Back to Gallery"}
                 </button>
               </div>
             </div>
