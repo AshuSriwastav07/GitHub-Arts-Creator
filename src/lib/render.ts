@@ -227,7 +227,8 @@ async function produce(
   }
 
   if (format === "png") {
-    const buf = await sharp(Buffer.from(base.data as string)).png().toBuffer();
+    const inputBuf = Buffer.isBuffer(base.data) ? base.data : Buffer.from(String(base.data));
+    const buf = await sharp(inputBuf).png().toBuffer();
     return { format: "png", data: buf, width: base.width, height: base.height };
   }
   return base;
